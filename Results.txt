@@ -1,0 +1,15 @@
+🎥 Frame rate: 25.00 FPS
+🖼️ Resolution: 1920x1080
+🎞️ Total frames: 9307
+⏱️ Duration: 372.32 seconds
+
+📊 Frame Analysis (index: 0)
+🔆 Brightness: 115.92
+🌗 Contrast: 48.74
+📏 Sharpness (Laplacian var): 303.34
+🧵 Texture richness (entropy): 7.39
+
+🔎 Checking for corrupt/missing frames...
+✅ No corrupt frames detected in 10s intervals.
+
+=== END OF REPORT ===
