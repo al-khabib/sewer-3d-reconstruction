@@ -1,0 +1,6 @@
+data/*
+
+!data/frames/frame_2600.jpg
+!data/frames/frame_2610.jpg
+!data/frame_keypoints/
+!data/frame_matches/
