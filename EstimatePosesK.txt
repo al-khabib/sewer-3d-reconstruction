@@ -1,0 +1,5 @@
+colmap feature_extractor --database_path database.db --image_path frames
+colmap exhaustive_matcher --database_path database.db
+mkdir sparse
+colmap mapper --database_path database.db --image_path frames --output_path sparse
+colmap model_converter --input_path sparse/0 --output_path output --output_type TXT
