@@ -91,3 +91,11 @@ This notebook will generate the final 3D surface reconstruction result.
 - To view the mesh in third-party apps (e.g., CloudCompare), `.obj` format is recommended for compatibility.
 
 ---
+
+### References
+
+1. Tancik, M., Park, K., Guo, C., Li, X., Mildenhall, B., Srinivasan, P. P., Barron, J. T., Ng, R. (2023). [Nerfstudio: A Modular Framework for Neural Radiance Field Development](https://arxiv.org/abs/2302.04264). arXiv:2302.04264.
+
+2. Nerfstudio Documentation – [https://docs.nerf.studio](https://docs.nerf.studio)
+
+3. Nerfstudio GitHub Repository – [https://github.com/nerfstudio-project/nerfstudio](https://github.com/nerfstudio-project/nerfstudio)
