@@ -22,14 +22,31 @@ https://docs.nerf.studio/quickstart/installation.html
 
 ### Dataset Preparation
 
-1. Prepare the dataset from scratch using Nerfstudio's default processing pipeline:
+You can prepare your dataset for Nerfacto training using one of the following two methods:
+
+
+#### Option 1: Using Nerfstudio’s Default Processing Pipeline
+
+Run the following command to preprocess images or video data into a NeRF-compatible format:
 
 ```bash
 ns-process-data {images, video} --data {DATA_PATH} --output-dir {PROCESSED_DATA_DIR}
 ```
 
-After dataset preprocessing, a file named `sparse_pc.ply` will be available in the output directory.  
-You can use the **`surface_construction.ipynb`** for surface construction.
+After preprocessing, a file named `sparse_pc.ply` will be available in the output directory.  
+You can then proceed with surface reconstruction using the `surface_construction.ipynb` notebook.
+
+
+#### Option 2: Using Existing COLMAP Results
+
+If you already have COLMAP outputs and want to train the **Nerfacto** model without using Nerfstudio’s full preprocessing pipeline, you can generate a compatible `transforms.json` file using the following notebook:
+
+```bash
+colmap_to_nerf.ipynb
+```
+
+This notebook converts COLMAP outputs into the format required by NeRF models, enabling you to skip redundant preprocessing steps.
+
 
 ---
 
@@ -38,8 +55,9 @@ You can use the **`surface_construction.ipynb`** for surface construction.
 Train the model with the following command:
 
 ```bash
-ns-train nerfacto --pipeline.model.predict-normals True
+ns-train nerfacto --pipeline.model.predict-normals True --data {PROCESSED_DATA_DIR}
 ```
+PROCESSED_DATA_DIR is the output directory from the previous data-processing state.
 
 ---
 
