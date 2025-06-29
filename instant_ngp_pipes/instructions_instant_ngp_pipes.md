@@ -20,6 +20,8 @@ Check `reconstruction_examples/` in this directory to see our reconstruction. No
 ## Preprocessing
 It's up to you but we recommend working on the blur of the videos to improve the final results. It's possible to skip this step, although it affects the output (not critically).
 
+You can check our blur analysis in `EDA/Blur_Analysis_Mitigation.ipynb`. You can also find the very first EDA we did in `EDA/EDA_3D_reconstruction.ipynb`
+
 ## Method 1 (the simple one)
 1) Download `colmap2nerf.py` file from the Instant NGP repo in `scripts/`
 
