@@ -87,7 +87,7 @@ ns-export poisson --load-config {CONFIG.yml} --output-dir {OUTPUT_DIR} --target-
 After exporting the point cloud, run `surface_construction.ipynb` with the appropriate point cloud directory.  
 This notebook will generate the final 3D surface reconstruction result.
 
-- To include **color** information, you can export as `.mtl` format for mesh construction.
+- To include **color** information, you can export as `.glb` format for mesh construction.
 - To view the mesh in third-party apps (e.g., CloudCompare), `.obj` format is recommended for compatibility.
 
 ---
