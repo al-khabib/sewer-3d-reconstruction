@@ -1,0 +1,144 @@
+import os
+import cv2
+import numpy as np
+import subprocess
+import argparse
+import shutil
+
+def run_command(description, command):
+    print(description)
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+    for line in process.stdout:
+        print(line, end="")
+    process.wait()
+
+def preprocess_frame(frame):
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    denoised = cv2.fastNlMeansDenoising(gray, h=10)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    enhanced = clahe.apply(denoised)
+    gamma = 1.2
+    lut = np.array([((i / 255.0) ** (1.0 / gamma)) * 255 for i in np.arange(256)]).astype("uint8")
+    gamma_corrected = cv2.LUT(enhanced, lut)
+    edges = cv2.Laplacian(gamma_corrected, cv2.CV_64F)
+    edges = cv2.convertScaleAbs(edges)
+    enhanced_edges = cv2.addWeighted(gamma_corrected, 0.8, edges, 0.2, 0)
+    sharpening_kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+    sharpened = cv2.filter2D(enhanced_edges, -1, sharpening_kernel)
+    return sharpened
+
+def process_video_fragment(video_path, images_folder, start_time, end_time, sample_fps=10):
+    cap = cv2.VideoCapture(video_path)
+    actual_fps = cap.get(cv2.CAP_PROP_FPS)
+    os.makedirs(images_folder, exist_ok=True)
+
+    print(f"\n[INFO] Processing video from {start_time}s to {end_time}s...")
+    start_frame = int(start_time * actual_fps)
+    end_frame = int(end_time * actual_fps)
+    frame_interval = max(1, int(actual_fps / sample_fps))
+
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    frame_idx = start_frame
+    saved_idx = 0
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret or frame_idx > end_frame:
+            break
+        if frame_idx % frame_interval == 0:
+            processed = preprocess_frame(frame)
+            base_fname = os.path.join(images_folder, f"frame_{saved_idx:04d}.png")
+            cv2.imwrite(base_fname, processed)
+            saved_idx += 1
+        frame_idx += 1
+
+    cap.release()
+    return images_folder
+
+def run_colmap_pipeline(project_name):
+    db_path = os.path.join(project_name, "database.db")
+    sparse_path = os.path.join(project_name, "sparse")
+    dense_path = os.path.join(project_name, "dense")
+    image_path = os.path.join(project_name, "images")
+    model_path = os.path.join(sparse_path, "0")
+
+    os.makedirs(project_name, exist_ok=True)
+
+    run_command("[2/8] Feature extraction...", [
+        "colmap", "feature_extractor",
+        "--database_path", db_path,
+        "--image_path", image_path,
+        "--ImageReader.single_camera", "1"
+    ])
+
+    run_command("[3/9] Exhaustive matching...", [
+        "colmap", "exhaustive_matcher",
+        "--database_path", db_path,
+        "--SiftMatching.use_gpu", "1"
+    ])
+
+    run_command("[4/9] Sparse reconstruction...", [
+        "colmap", "mapper",
+        "--database_path", db_path,
+        "--image_path", image_path,
+        "--output_path", sparse_path,
+        "--Mapper.num_threads", "8"
+    ])
+
+    run_command("[5/9] Image undistortion...", [
+        "colmap", "image_undistorter",
+        "--image_path", image_path,
+        "--input_path", model_path,
+        "--output_path", dense_path,
+        "--output_type", "COLMAP"
+    ])
+
+    run_command("[6/9] PatchMatch Stereo...", [
+        "colmap", "patch_match_stereo",
+        "--workspace_path", dense_path,
+        "--workspace_format", "COLMAP",
+        "--PatchMatchStereo.geom_consistency", "true"
+    ])
+
+    run_command("[7/9] Stereo fusion...", [
+        "colmap", "stereo_fusion",
+        "--workspace_path", dense_path,
+        "--workspace_format", "COLMAP",
+        "--input_type", "geometric",
+        "--output_path", os.path.join(dense_path, "fused.ply")
+    ])
+
+    run_command("[8/9] Mesh generation...", [
+        "colmap", "poisson_mesher",
+        "--input_path", os.path.join(dense_path, "fused.ply"),
+        "--output_path", os.path.join(dense_path, "poisson_mesh.ply")
+    ])
+
+    print("[9/9] Reconstruction complete.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Video to COLMAP 3D Reconstruction Pipeline")
+    parser.add_argument("--video", required=True, help="Path to input video file")
+    parser.add_argument("--start", type=float, required=True, help="Start time in seconds")
+    parser.add_argument("--end", type=float, required=True, help="End time in seconds")
+    parser.add_argument("--fps", type=int, default=10, help="Sampling FPS for frames")
+    parser.add_argument("--project", default="colmap_project", help="COLMAP project name")
+
+    args = parser.parse_args()
+    
+    images_folder = os.path.join(args.project, "images")
+    print("[8/9] Frame extraction and pre-processing")
+    process_video_fragment(
+        args.video,
+        images_folder,
+        args.start,
+        args.end,
+        sample_fps=args.fps
+    )
+
+    run_colmap_pipeline(project_name=args.project)
