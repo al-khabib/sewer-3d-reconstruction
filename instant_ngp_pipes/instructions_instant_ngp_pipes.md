@@ -132,3 +132,62 @@ python your_path_to_colmap2nerf_file\colmap2nerf.py \
 8) Rename `pipe_ngp_dataset` to `transforms.json`. You will need to use this file & `images/` to train the model.
 
 9) Continue with `transforms.json` & `images/` as in [4) in Method 1 (the simple one)](#method-1-the-simple-one)
+
+## ADDITIONAL METHOD (DEMO PURPOSES 3*)
+Although this approach does not deal with inspection videos, it focuses on understanding the potential of InstantNGP in similar scenarios. It will be executed using self-collected data which additional (not available in provided videos) features and benefits. We wHill utilize ARKit-Based Precision using Record3D which provides superior data quality foundation. Record3D offers an alternative approach that leverages Apple's ARKit technology for camera pose estimation, potentially providing more robust tracking in challenging environments.
+
+Additional Prerequisites:
+- iPhone 12 Pro or newer with LiDAR capability
+- Record3D app installed on iPhone
+- All standard prerequisites from Methods 1 and 2
+
+Setup does not require additional attention. You can manually select higher FPS, Higher-quality LiDAR recording (720x960 vs 1440x1920)
+
+- Record the demo footage in your desired demo environment
+- Export using "Shareable/Internal format (.r3d)"
+- Transfer the exported data to your computer
+- Rename the .r3d extension to .zip and extract
+
+Convert Record3D data to Instant NGP format
+
+``` bash
+python scripts/record3d2nerf.py --scene path/to/data
+```
+If you capture the scene in the landscape orientation, add --rotate.
+
+This will create:
+- transforms.json - Main file for instant-ngp training
+- arkit_transforms/ folder - Contains original ARKit data (backup only)
+- images/ folder - Extracted RGB frames
+
+For instant-ngp training, use the main transforms.json file in the root of your data directory, not the one inside the arkit_transforms folder. The main transforms.json has been converted by the record3d2nerf.py script to use instant-ngp's expected coordinate system and format, while the arkit_transforms/transforms.json contains the original ARKit data before conversion and is kept as a backup but isn't used for training.
+
+Loading the snapshot as well as saving the model is exectly the same as for approaches before.
+
+Launch instant ngp training:
+```bash
+ ./instant-ngp path/to/data
+```
+
+Training parameters: Use conservative settings initially due to challenging lighting conditions. You can try to use custom config file for the training process (need to put the 'high_quality.json' file in the cofigs/nerf folder first. 
+``` bash
+./instant-ngp path/to/data --config configs/nerf/high_quality.json --width 1280 --height 720
+```
+Note: Unfortunately the capabilities of our GPU were not enought to squeeze out absolute maximum of InstantNGP using our custom data. To compare the results we need to configure better rendering settings (in GUI directly), however we get less than 1fps of rendering far from reaching the best settings. 
+
+Saving: In the Instant NGP GUI, navigate to the "Snapshot" section. Click "Save" to create a "base.ingp" file
+
+You can launch the training which will also save the results automatically: 
+``` bash
+python scripts/run.py --scene path/to/data --save_snapshot path/to/data/model.ingp --n_steps 5000
+```
+
+Loading: 
+Run `.\instant-ngp.exe "full_path_to_ingp_file_folder/2000.ingp" --no-train`
+
+That will load the Instant NGP app with your reconstruction.
+
+
+
+
+
